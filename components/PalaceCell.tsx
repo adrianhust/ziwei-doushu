@@ -11,11 +11,8 @@ interface PalaceCellProps {
   isSelected?: boolean;
   isSanFang?: boolean;
   delay?: number;
-  /** 叠加四化：星名 → 四化类型（'禄'/'权'/'科'/'忌'） */
   overlayStarSiHua?: Record<string, string>;
-  /** 叠加标签：'年'（流年）或 '限'（大限） */
   overlayLabel?: string;
-  /** 点击叠加四化 badge 回调 */
   onSiHuaClick?: (starName: string, siHua: string) => void;
 }
 
@@ -81,7 +78,7 @@ export default function PalaceCell({
           ? 'rgba(37,99,235,0.09)'
           : isMingGong
           ? 'rgba(212,168,67,0.04)'
-          : 'var(--t-bg)',
+          : 'var(--bg-card)',
         boxShadow: isCurrentDaXian
           ? 'inset 3px 0 0 rgba(147,51,234,0.5)'
           : isSelected
@@ -91,24 +88,24 @@ export default function PalaceCell({
           : 'none',
       }}
     >
-      {/* 大限年龄 */}
+      {/* 大限年龄 - top right corner */}
       {daXianAge && (
         <div className={clsx(
           'absolute top-1 right-1 text-[9px] font-mono tabular-nums',
           isCurrentDaXian ? 'text-purple-400' : ''
         )}
-          style={!isCurrentDaXian ? { color: 'var(--t-faint)', opacity: 0.75 } : undefined}
+          style={!isCurrentDaXian ? { color: 'var(--tx-3)', opacity: 0.75 } : undefined}
         >
           {daXianAge[0]}–{daXianAge[1]}
         </div>
       )}
 
-      {/* 宫名行 */}
+      {/* 宫名 - top left */}
       <div className="flex items-center gap-1 mb-0.5 pr-8">
         <span className={clsx('text-[10px] font-medium tracking-wide',
           isMingGong ? 'text-amber-500' : isShenGong ? 'text-sky-500' : ''
         )}
-          style={!isMingGong && !isShenGong ? { color: 'var(--t-faint)' } : undefined}
+          style={!isMingGong && !isShenGong ? { color: 'var(--tx-3)' } : undefined}
         >
           {name}
         </span>
@@ -120,13 +117,10 @@ export default function PalaceCell({
         )}
       </div>
 
-      {/* 干支 */}
-      <div className="text-[9px] font-mono mb-1" style={{ color: 'var(--t-faint)', opacity: 0.75 }}>{ganzhi}</div>
-
-      {/* 主星 */}
+      {/* 主星 - RED for main stars */}
       <div className="flex flex-col gap-0.5 flex-1">
         {majorStars.length === 0 && (
-          <span className="text-[10px] italic" style={{ color: 'var(--t-faint)', opacity: 0.6 }}>空宫</span>
+          <span className="text-[10px] italic" style={{ color: 'var(--tx-3)', opacity: 0.6 }}>空宫</span>
         )}
         {majorStars.map((star) => {
           const overlaySiHua = overlayStarSiHua?.[star.name];
@@ -136,10 +130,9 @@ export default function PalaceCell({
               className="flex items-center"
               onClick={e => { e.stopPropagation(); onStarClick?.(star); }}
             >
-              <span className={clsx(
-                'text-[13px] leading-tight font-bold tracking-tight cursor-pointer hover:brightness-125 transition-all',
-                star.brightness === 'bright' ? 'text-amber-300' : star.brightness === 'dim' ? 'text-amber-700/80' : 'text-amber-500',
-              )}>
+              {/* Main stars: RED/warm color */}
+              <span className="text-[13px] leading-tight font-bold tracking-tight cursor-pointer hover:brightness-125 transition-all"
+                style={{ color: '#C05621' }}>
                 {star.name}
               </span>
               {star.siHua && <SiHuaBadge siHua={star.siHua} />}
@@ -159,13 +152,14 @@ export default function PalaceCell({
         })}
       </div>
 
-      {/* 吉星 */}
+      {/* 吉星 - BLUE for lucky stars */}
       {luckyStars.length > 0 && (
         <div className="flex flex-wrap gap-x-1 mt-0.5">
           {luckyStars.map(s => {
             const overlaySiHua = overlayStarSiHua?.[s.name];
             return (
-              <span key={s.name} className="inline-flex items-center text-[9px] text-sky-500/70 leading-tight">
+              <span key={s.name} className="inline-flex items-center text-[9px] leading-tight"
+                style={{ color: '#2B6CB0' }}>
                 {s.name}
                 {s.siHua && <SiHuaBadge siHua={s.siHua} />}
                 {overlaySiHua && (
@@ -196,6 +190,11 @@ export default function PalaceCell({
         </div>
       )}
 
+      {/* 干支 + 宫名 at bottom */}
+      <div className="mt-auto pt-1 border-t border-black/5">
+        <div className="text-[9px] font-mono" style={{ color: 'var(--tx-3)', opacity: 0.75 }}>{ganzhi}</div>
+        <div className="text-[10px] font-medium" style={{ color: 'var(--tx-2)' }}>{name}</div>
+      </div>
     </motion.div>
   );
 }
