@@ -4,7 +4,9 @@ import { hashPassword, generateToken, generateExpiry } from '@/lib/auth/utils';
 
 export async function POST(request: Request) {
   try {
-    const { phone, password } = await request.json();
+    const body = await request.json();
+    const phone = String(body.phone || '').trim();
+    const password = String(body.password || '');
 
     if (!phone || !password) {
       return NextResponse.json({ ok: false, error: '手机号和密码为必填' }, { status: 400 });

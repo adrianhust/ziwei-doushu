@@ -11,7 +11,7 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ open, onClose, mode: initialMode = 'login' }: AuthModalProps) {
-  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>(initialMode);
   const [forgotStep, setForgotStep] = useState<1 | 2>(1);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -34,20 +34,31 @@ export default function AuthModal({ open, onClose, mode: initialMode = 'login' }
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // Reset state when mode changes
+  // Reset state when open or mode prop changes
   useEffect(() => {
+    setMode(initialMode);
+    setForgotStep(1);
     setError('');
     setSubmitting(false);
-  }, [mode, forgotStep]);
+    setPhone('');
+    setPassword('');
+    setName('');
+    setCodeTarget('');
+    setCode('');
+    setNewPassword('');
+    setConfirmPassword('');
+  }, [open, initialMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
 
+    const trimmedPhone = phone.trim();
+    const trimmedName = name.trim();
     const errMsg = mode === 'login'
-      ? await login(phone, password)
-      : await register(phone, password, name);
+      ? await login(trimmedPhone, password)
+      : await register(trimmedPhone, password, trimmedName);
 
     if (errMsg) {
       setError(errMsg);

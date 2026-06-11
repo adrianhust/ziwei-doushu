@@ -197,31 +197,42 @@ function escapeJSON(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
 }
 
-function generateMockStream(chart: ChartData, messages: Message[]): ReadableStream {
+function generateMockStream(chart: ChartData, messages: Message[], currentUser: { name: string; phone: string; id: string } | null): ReadableStream {
   const encoder = new TextEncoder();
+
+  const userNote = currentUser
+    ? `### 个性化提示\n\n本次解读针对用户【${currentUser.name}】，报告中的建议会适度结合其身份特征与稳定需求。\n\n`
+    : '';
+
+  const styleHint = currentUser
+    ? `### 用户风格\n\n该用户偏好${currentUser.name.length % 2 === 0 ? '稳健踏实' : '积极活跃'}的表达方式，建议内容将更强调${currentUser.name.length % 2 === 0 ? '长线规划与情绪管理' : '行动力与突破机遇'}。\n\n`
+    : '';
 
   const lastMsg = messages[messages.length - 1]?.content || '';
   let paragraphs: string[] = [];
 
+  const wrapWithHints = (base: string[]) => currentUser ? [userNote, styleHint, ...base] : base;
+
   if (lastMsg.includes('命格总览') || lastMsg.includes('overview')) {
-    paragraphs = MOCK_READINGS.overview;
+    paragraphs = wrapWithHints(MOCK_READINGS.overview);
   } else if (lastMsg.includes('感情')) {
-    paragraphs = MOCK_READINGS.love;
+    paragraphs = wrapWithHints(MOCK_READINGS.love);
   } else if (lastMsg.includes('事业')) {
-    paragraphs = MOCK_READINGS.career;
+    paragraphs = wrapWithHints(MOCK_READINGS.career);
   } else if (lastMsg.includes('财运')) {
-    paragraphs = MOCK_READINGS.wealth;
+    paragraphs = wrapWithHints(MOCK_READINGS.wealth);
   } else if (lastMsg.includes('健康')) {
-    paragraphs = MOCK_READINGS.health;
+    paragraphs = wrapWithHints(MOCK_READINGS.health);
   } else if (lastMsg.includes('性格')) {
-    paragraphs = MOCK_READINGS.personality;
+    paragraphs = wrapWithHints(MOCK_READINGS.personality);
   } else {
     const starSect = buildStarSect(chart);
-    paragraphs = [
+    paragraphs = wrapWithHints([
       `### 命盘综合解读\n\n根据您提供的命盘信息：\n\n${starSect}\n\n此命盘配置格局清晰，主星能量充沛，命主一生运势起伏有致，总体趋向平稳发展。`,
       `### 重点领域\n\n命宫与身宫相互呼应，命主内外一致，为人真诚可信。官禄宫得吉星加持，事业发展顺遂。财帛宫与田宅宫相配，财富积累能力较强。`,
       `### ${chart.birthInfo.name || '命主'}当前运势\n\n当前大限处于人生重要阶段，宜把握时机，积极进取。同时关注健康与家庭平衡，方能行稳致远。`,
-    ];
+      currentUser ? `### 用户身份提示\n\n本次解读已经结合用户【${currentUser.name}】的身份，建议偏向${currentUser.phone.endsWith('8') ? '稳健守成' : '适度进取'}，避免过度冒险。` : '',
+    ].filter(Boolean) as string[]);
   }
 
   let index = 0;
@@ -342,10 +353,10 @@ ${starSect}
           },
         });
       } else {
-        stream = generateMockStream(chart, messages);
+        stream = generateMockStream(chart, messages, currentUser);
       }
     } catch {
-      stream = generateMockStream(chart, messages);
+      stream = generateMockStream(chart, messages, currentUser);
     }
 
     return new Response(stream, {

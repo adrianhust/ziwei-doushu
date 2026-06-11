@@ -5,7 +5,10 @@ import { createSession } from '@/lib/auth/store';
 
 export async function POST(request: Request) {
   try {
-    const { phone, password, name } = await request.json();
+    const body = await request.json();
+    const phone = String(body.phone || '').trim();
+    const password = String(body.password || '');
+    const name = String(body.name || '').trim();
 
     if (!phone || !password || !name) {
       return NextResponse.json({ ok: false, error: '手机号、密码、姓名均为必填' }, { status: 400 });
