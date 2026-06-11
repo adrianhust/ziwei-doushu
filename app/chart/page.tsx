@@ -491,7 +491,7 @@ export default function ChartPage() {
           >
             <span>
               {chart.birthInfo.year}年{chart.birthInfo.month}月{chart.birthInfo.day}日
-              {chart.birthInfo.hour ? ` ${chart.birthInfo.hour}时` : ''}
+              {chart.birthInfo.hour !== undefined && chart.birthInfo.hour >= 0 ? ` ${BRANCHES[chart.birthInfo.hour]}时` : ''}
               {chart.birthInfo.gender === 'male' ? ' · 男' : ' · 女'}
             </span>
             <span>·</span>

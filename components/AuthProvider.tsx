@@ -55,8 +55,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       fetchWithAuth('/api/auth/me', savedToken)
         .then(r => r.json())
         .then(res => {
-          if (res.ok) setUser(res.data);
-          else localStorage.removeItem(TOKEN_KEY);
+          if (res.ok) {
+            setUser(res.data);
+            localStorage.removeItem('ziwei_free_trial_used');
+          } else localStorage.removeItem(TOKEN_KEY);
         })
         .catch(() => localStorage.removeItem(TOKEN_KEY))
         .finally(() => setLoading(false));
@@ -75,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(TOKEN_KEY, data.data.token);
       setToken(data.data.token);
       setUser(data.data.user);
+      localStorage.removeItem('ziwei_free_trial_used');
       return null;
     }
     return data.error || '登录失败';
@@ -90,6 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(TOKEN_KEY, data.data.token);
       setToken(data.data.token);
       setUser(data.data.user);
+      localStorage.removeItem('ziwei_free_trial_used');
       return null;
     }
     return data.error || '注册失败';
@@ -144,6 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(TOKEN_KEY, data.data.token);
       setToken(data.data.token);
       setUser(data.data.user);
+      localStorage.removeItem('ziwei_free_trial_used');
       return null;
     }
     return data.error || '重置失败';
