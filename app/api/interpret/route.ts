@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
+import { getSessionByToken, getUserById } from '@/lib/auth/store';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+}
+
+function maskPhone(phone: string): string {
+  return phone.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2');
 }
 
 interface Star {
@@ -245,8 +250,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: '缺少参数' }, { status: 400 });
     }
 
+    const authHeader = request.headers.get('authorization');
+    let currentUser = null;
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.slice(7);
+      const session = await getSessionByToken(token);
+      if (session) {
+        const user = await getUserById(session.userId);
+        if (user) {
+          currentUser = user;
+        }
+      }
+    }
+
+    const userIdentity = currentUser
+      ? `当前解读请求来自已登录用户：姓名 ${currentUser.name}，手机号 ${maskPhone(currentUser.phone)}，用户ID ${currentUser.id}。请在解读风格和内容中参考此用户身份信息，但不要直接输出账号敏感信息。`
+      : '当前解读请求来自未登录用户。';
+
     const starSect = buildStarSect(chart);
     const systemPrompt = `你是一位精通紫微斗数的大师，传承倪海夏（倪海厦）的紫微斗数体系。你正在为一位用户解读命盘。
+
+${userIdentity}
 
 用户命盘信息：
 ${starSect}

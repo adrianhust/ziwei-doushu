@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BirthForm from '@/components/BirthForm';
 import ChartBoard from '@/components/ChartBoard';
@@ -14,11 +14,15 @@ import { getDeviceId, markFreeTrialUsed, hasUsedFreeTrial } from '@/lib/auth/uti
 import { STEMS, BRANCHES } from '@/lib/ziwei/constants';
 import { detectPatterns } from '@/lib/ziwei/patterns';
 
-const STORAGE_KEY = 'ziwei_saved_birth_info';
+const STORAGE_KEY_PREFIX = 'ziwei_saved_birth_info';
 
 export default function ChartPage() {
   const { user, token, loading, deductCredits } = useAuth();
   const [chart, setChart] = useState<ZiweiChart | null>(null);
+  const storageKey = useMemo(
+    () => (user ? `${STORAGE_KEY_PREFIX}_${user.id}` : `${STORAGE_KEY_PREFIX}_anon`),
+    [user],
+  );
   const [selectedPalace, setSelectedPalace] = useState<Palace | null>(null);
   const [selectedSiHua, setSelectedSiHua] = useState<{ starName: string; siHua: string; view: TimeView } | null>(null);
   const [view, setView] = useState<TimeView>('mingpan');
@@ -52,7 +56,7 @@ export default function ChartPage() {
           body: JSON.stringify({ deviceId: getDeviceId(), type: 'chart' }),
         });
       } catch {}
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(info)); } catch {}
+      try { localStorage.setItem(storageKey, JSON.stringify(info)); } catch {}
       doGenerate(info);
       return;
     }
@@ -67,7 +71,7 @@ export default function ChartPage() {
             body: JSON.stringify({ deviceId: getDeviceId(), type: 'chart' }),
           });
         } catch {}
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(info)); } catch {}
+        try { localStorage.setItem(storageKey, JSON.stringify(info)); } catch {}
         doGenerate(info);
       } else {
         setMsg('积分不足，请购买积分后继续使用');
@@ -100,7 +104,7 @@ export default function ChartPage() {
               body: JSON.stringify({ deviceId: getDeviceId(), type: 'chart' }),
             });
           } catch {}
-          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(pendingInfo)); } catch {}
+          try { localStorage.setItem(storageKey, JSON.stringify(pendingInfo)); } catch {}
           doGenerate(pendingInfo);
         } else {
           setMsg('积分不足，请购买积分后继续使用');
@@ -152,7 +156,7 @@ export default function ChartPage() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(storageKey);
       if (!raw) return;
       const saved: BirthInfo = JSON.parse(raw);
       if (!saved || !saved.year || !saved.month || !saved.day || saved.hour == null || !saved.gender) return;
@@ -160,7 +164,7 @@ export default function ChartPage() {
     } catch {
       // Ignore invalid or unavailable storage
     }
-  }, []);
+  }, [storageKey]);
 
   // ── 未起盘：展示出生信息表单 ──
   if (!chart) {
