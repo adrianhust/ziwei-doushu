@@ -197,41 +197,97 @@ function escapeJSON(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
 }
 
+function getUserVariant(currentUser: { name: string; phone: string; id: string } | null) {
+  if (!currentUser) return 0;
+  const sum = currentUser.phone.split('').reduce((acc, ch) => acc + Number(ch || 0), 0);
+  return sum % 4;
+}
+
+function getVariantAdvice(variant: number) {
+  const variants = [
+    {
+      label: '稳健布局',
+      career: '建议以稳健布局为主，先夯实基础，再逐步扩展事业范围。',
+      wealth: '财富策略宜守成为主，稳健理财比短期投机更符合当前局势。',
+    },
+    {
+      label: '突破进取',
+      career: '此用户适合把握机遇，适度争取突破性的事业机会。',
+      wealth: '财运上可适当关注新兴机会，但需做好风险控制。',
+    },
+    {
+      label: '人脉协同',
+      career: '建议通过人脉协同与合作关系推动事业发展。',
+      wealth: '财运方面宜借助贵人和合作伙伴的支持，避免孤军深入。',
+    },
+    {
+      label: '稳中求变',
+      career: '建议在稳中求变中寻找突破口，避免急躁冒进。',
+      wealth: '财富策略宜分散配置，既保守又保留一定增值空间。',
+    },
+  ];
+  return variants[variant];
+}
+
 function generateMockStream(chart: ChartData, messages: Message[], currentUser: { name: string; phone: string; id: string } | null): ReadableStream {
   const encoder = new TextEncoder();
+  const variant = getUserVariant(currentUser);
+  const variantAdvice = getVariantAdvice(variant);
 
   const userNote = currentUser
-    ? `### 个性化提示\n\n本次解读针对用户【${currentUser.name}】，报告中的建议会适度结合其身份特征与稳定需求。\n\n`
+    ? `### 个性化提示\n\n本次解读针对用户【${currentUser.name}】，报告建议会结合其身份特征与偏好方向。\n\n`
     : '';
 
   const styleHint = currentUser
     ? `### 用户风格\n\n该用户偏好${currentUser.name.length % 2 === 0 ? '稳健踏实' : '积极活跃'}的表达方式，建议内容将更强调${currentUser.name.length % 2 === 0 ? '长线规划与情绪管理' : '行动力与突破机遇'}。\n\n`
     : '';
 
+  const extraUserHint = currentUser
+    ? `### 用户专属建议\n\n针对用户【${currentUser.name}】，本次解读将特别关注${variantAdvice.label}风格，建议内容更契合其当前能量。\n\n`
+    : '';
+
   const lastMsg = messages[messages.length - 1]?.content || '';
   let paragraphs: string[] = [];
 
-  const wrapWithHints = (base: string[]) => currentUser ? [userNote, styleHint, ...base] : base;
+  const wrapWithHints = (base: string[]) => currentUser ? [userNote, styleHint, extraUserHint, ...base] : base;
 
   if (lastMsg.includes('命格总览') || lastMsg.includes('overview')) {
-    paragraphs = wrapWithHints(MOCK_READINGS.overview);
+    paragraphs = wrapWithHints([
+      ...MOCK_READINGS.overview,
+      currentUser ? `### 个人补充\n\n本次总览已经考虑到用户【${currentUser.name}】的个性特点和当前身份趋势，建议进一步关注${variantAdvice.label}方向。` : '',
+    ].filter(Boolean) as string[]);
   } else if (lastMsg.includes('感情')) {
-    paragraphs = wrapWithHints(MOCK_READINGS.love);
+    paragraphs = wrapWithHints([
+      ...MOCK_READINGS.love,
+      currentUser ? `### 感情建议\n\n针对【${currentUser.name}】，建议在关系处理中保持${variantAdvice.label}的稳定性与耐心。` : '',
+    ].filter(Boolean) as string[]);
   } else if (lastMsg.includes('事业')) {
-    paragraphs = wrapWithHints(MOCK_READINGS.career);
+    paragraphs = wrapWithHints([
+      ...MOCK_READINGS.career,
+      currentUser ? `### 事业建议\n\n${variantAdvice.career} 这是本次解读中特别为【${currentUser.name}】定制的方向。` : '',
+    ].filter(Boolean) as string[]);
   } else if (lastMsg.includes('财运')) {
-    paragraphs = wrapWithHints(MOCK_READINGS.wealth);
+    paragraphs = wrapWithHints([
+      ...MOCK_READINGS.wealth,
+      currentUser ? `### 财运建议\n\n${variantAdvice.wealth} 这也是本次解读特别为【${currentUser.name}】定制的财富方向。` : '',
+    ].filter(Boolean) as string[]);
   } else if (lastMsg.includes('健康')) {
-    paragraphs = wrapWithHints(MOCK_READINGS.health);
+    paragraphs = wrapWithHints([
+      ...MOCK_READINGS.health,
+      currentUser ? `### 健康建议\n\n针对用户【${currentUser.name}】，建议保持${variantAdvice.label}的生活节奏，避免情绪波动带来的健康压力。` : '',
+    ].filter(Boolean) as string[]);
   } else if (lastMsg.includes('性格')) {
-    paragraphs = wrapWithHints(MOCK_READINGS.personality);
+    paragraphs = wrapWithHints([
+      ...MOCK_READINGS.personality,
+      currentUser ? `### 性格提示\n\n${variantAdvice.label}的特质在本次解读中被特别强调，便于用户【${currentUser.name}】更好地把握自身优势。  ` : '',
+    ].filter(Boolean) as string[]);
   } else {
     const starSect = buildStarSect(chart);
     paragraphs = wrapWithHints([
       `### 命盘综合解读\n\n根据您提供的命盘信息：\n\n${starSect}\n\n此命盘配置格局清晰，主星能量充沛，命主一生运势起伏有致，总体趋向平稳发展。`,
       `### 重点领域\n\n命宫与身宫相互呼应，命主内外一致，为人真诚可信。官禄宫得吉星加持，事业发展顺遂。财帛宫与田宅宫相配，财富积累能力较强。`,
       `### ${chart.birthInfo.name || '命主'}当前运势\n\n当前大限处于人生重要阶段，宜把握时机，积极进取。同时关注健康与家庭平衡，方能行稳致远。`,
-      currentUser ? `### 用户身份提示\n\n本次解读已经结合用户【${currentUser.name}】的身份，建议偏向${currentUser.phone.endsWith('8') ? '稳健守成' : '适度进取'}，避免过度冒险。` : '',
+      currentUser ? `### 用户身份提示\n\n本次解读已经结合用户【${currentUser.name}】的身份，建议偏向${variantAdvice.label}方向，兼顾稳定与成长。` : '',
     ].filter(Boolean) as string[]);
   }
 

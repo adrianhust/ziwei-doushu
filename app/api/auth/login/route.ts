@@ -5,7 +5,7 @@ import { hashPassword, generateToken, generateExpiry } from '@/lib/auth/utils';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const phone = String(body.phone || '').trim();
+    const phone = String(body.phone || '').replace(/\D/g, '');
     const password = String(body.password || '');
 
     if (!phone || !password) {

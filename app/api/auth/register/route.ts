@@ -6,7 +6,7 @@ import { createSession } from '@/lib/auth/store';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const phone = String(body.phone || '').trim();
+    const phone = String(body.phone || '').replace(/\D/g, '');
     const password = String(body.password || '');
     const name = String(body.name || '').trim();
 
