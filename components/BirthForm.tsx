@@ -5,6 +5,7 @@ import type { BirthInfo } from '@/lib/ziwei/types';
 import { SHICHEN } from '@/lib/ziwei/constants';
 import { useTheme } from '@/components/ThemeProvider';
 import { PROVINCES } from '@/lib/ziwei/cities';
+import { formToBirthInfo } from '@/lib/ziwei/share';
 
 export interface BirthFormState {
   name: string;
@@ -145,7 +146,7 @@ export default function BirthForm({ onSubmit, loading, initialData, onFormSave, 
     setTouched({ year: true, month: true, day: true });
     if (hasError) return;
     onFormSave?.({ ...form });
-    onSubmit({ year: y, month: m, day: d, hour: branch, gender: form.gender, name: form.name || undefined, province: form.province || undefined, city: form.city || undefined, longitude: form.province ? form.longitude : undefined });
+    onSubmit(formToBirthInfo(form));
   };
 
   // ─── 样式变量 ────────────────────────────────────────────
